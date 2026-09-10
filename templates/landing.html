@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}FactoryMind AI - Industrial Memory & Knowledge Intelligence{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-75 py-4">
+    <!-- Hero Banner -->
+    <div class="col-12 text-center mb-5">
+        <div class="d-inline-flex align-items-center gap-2 bg-primary bg-opacity-10 border border-primary text-info px-3 py-1.5 rounded-pill mb-3">
+            <i class="bi bi-cpu-fill"></i>
+            <span class="small fw-semibold">Next-Gen Industrial Memory & RAG Intelligence</span>
+        </div>
+        <h1 class="display-4 fw-bold text-white mb-3">FactoryMind <span class="brand-text">AI</span> Platform</h1>
+        <p class="lead text-muted mx-auto col-lg-8">
+            Capture, organize, search, and retrieve critical manufacturing SOPs, equipment manuals, and troubleshooting knowledge using AI, OCR, and FAISS vector search.
+        </p>
+    </div>
+
+    <!-- Two Main Pathways -->
+    <div class="col-md-6 col-lg-5 mb-4">
+        <div class="card card-custom h-100 p-4 border-2 border-primary position-relative shadow-lg hover-lift">
+            <div class="badge bg-primary px-3 py-1.5 rounded-pill position-absolute top-0 end-0 m-3 fs-6">Enterprise</div>
+            <div class="bg-primary bg-gradient rounded-3 p-3 d-inline-flex align-items-center justify-content-center mb-3" style="width: 58px; height: 58px;">
+                <i class="bi bi-building-fill text-white fs-3"></i>
+            </div>
+            <h3 class="fw-bold text-white mb-2">Registered Company Workspace</h3>
+            <p class="text-muted small mb-4">
+                Access your company's permanent knowledge repository. Enjoy multi-user role-based permissions (Admin, Engineer, Technician), document management, and custom RAG AI search.
+            </p>
+            
+            <ul class="list-unstyled text-light small mb-4">
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Permanent Document Storage</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Role-Based Access (Admin/Engineer/Technician)</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Company-wide FAISS Vector Repository</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Analytics & Equipment Dashboard</li>
+            </ul>
+
+            <div class="mt-auto d-flex gap-2">
+                <a href="{% url 'login' %}" class="btn btn-primary-custom flex-grow-1 py-2.5">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Company Login
+                </a>
+                <a href="{% url 'register' %}" class="btn btn-outline-info flex-grow-1 py-2.5">
+                    Register Company
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-5 mb-4">
+        <div class="card card-custom h-100 p-4 border-2 border-info position-relative shadow-lg hover-lift">
+            <div class="badge bg-info text-dark px-3 py-1.5 rounded-pill position-absolute top-0 end-0 m-3 fs-6">No Registration</div>
+            <div class="bg-info bg-gradient rounded-3 p-3 d-inline-flex align-items-center justify-content-center mb-3" style="width: 58px; height: 58px;">
+                <i class="bi bi-lightning-charge-fill text-dark fs-3"></i>
+            </div>
+            <h3 class="fw-bold text-white mb-2">Quick AI Assistant <span class="text-info fs-6 fw-normal d-block mt-1">(Use Without Registration)</span></h3>
+            <p class="text-muted small mb-4">
+                Instant access for individual engineers and technicians. Upload temporary manuals for instant OCR & RAG Q&A, or ask general industrial maintenance questions right away!
+            </p>
+
+            <ul class="list-unstyled text-light small mb-4">
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-info me-2"></i>Zero Registration Required</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-info me-2"></i>Temporary Document Upload & Instant OCR</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-info me-2"></i>General Industrial AI Mode (Motors, Pumps, Safety)</li>
+                <li class="mb-2"><i class="bi bi-shield-lock-fill text-warning me-2"></i>Automatic Purge on Session Exit</li>
+            </ul>
+
+            <div class="mt-auto">
+                <a href="{% url 'guest_chat' %}" class="btn btn-info btn-lg text-dark fw-bold w-100 py-2.5 shadow">
+                    <i class="bi bi-robot me-2"></i>Launch Quick AI Assistant
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

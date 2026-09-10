@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Account - FactoryMind AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-md-8 col-lg-6">
+        <div class="card card-custom p-4 shadow-lg border-secondary">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold text-white mb-1">Create Personnel Account</h3>
+                <p class="text-muted small">Register to access industrial documents, SOPs, and AI assistance</p>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Username *</label>
+                        {{ form.username }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Email Address *</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-light">First Name</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Last Name</label>
+                        {{ form.last_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Role Privilege *</label>
+                        {{ form.role }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Department</label>
+                        {{ form.department }}
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label text-light">Employee ID</label>
+                        {{ form.employee_id }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Password *</label>
+                        {{ form.password1 }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Confirm Password *</label>
+                        {{ form.password2 }}
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary-custom w-100 py-2 mt-4">Register User</button>
+            </form>
+
+            <div class="text-center text-muted small mt-4">
+                Already registered? <a href="{% url 'login' %}" class="text-info text-decoration-none fw-medium">Sign In</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

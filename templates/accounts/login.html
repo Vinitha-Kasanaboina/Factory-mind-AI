@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - FactoryMind AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center my-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card card-custom p-4 shadow-lg border-secondary">
+            <div class="text-center mb-4">
+                <div class="bg-primary bg-gradient rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 54px; height: 54px;">
+                    <i class="bi bi-cpu-fill text-white fs-3"></i>
+                </div>
+                <h3 class="fw-bold text-white mb-1">FactoryMind AI</h3>
+                <p class="text-muted small">Industrial Memory & Knowledge Intelligence</p>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label text-light">Username</label>
+                    {{ form.username }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light">Password</label>
+                    {{ form.password }}
+                </div>
+                <button type="submit" class="btn btn-primary-custom w-100 py-2 mt-2">Sign In</button>
+            </form>
+
+            <hr class="border-secondary my-4">
+            <div class="text-center text-muted small">
+                Don't have an account? <a href="{% url 'register' %}" class="text-info text-decoration-none fw-medium">Create Account</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

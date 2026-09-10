@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block title %}Quick AI Assistant (Guest Mode) - FactoryMind AI{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- Left Panel: Session Status & Temporary Uploads -->
+    <div class="col-md-4 col-lg-3">
+        <div class="card card-custom p-3 h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom border-secondary">
+                    <i class="bi bi-shield-lock-fill text-warning fs-4"></i>
+                    <div>
+                        <h6 class="text-white mb-0 fw-bold">Guest Mode</h6>
+                        <span class="text-muted small" style="font-size: 0.75rem;">No Registration Required</span>
+                    </div>
+                </div>
+
+                <!-- Session Mode Badge -->
+                <div id="modeStatusBanner" class="alert {% if has_documents %}alert-success{% else %}alert-info{% endif %} p-2.5 mb-3 border-0 small">
+                    {% if has_documents %}
+                    <div class="fw-bold"><i class="bi bi-file-earmark-check-fill me-1"></i>Custom Document Mode</div>
+                    <span style="font-size: 0.75rem;">Answers derived from your uploaded session manual(s).</span>
+                    {% else %}
+                    <div class="fw-bold"><i class="bi bi-cpu-fill me-1"></i>General Industrial AI Mode</div>
+                    <span style="font-size: 0.75rem;">Provides general maintenance & troubleshooting guidance.</span>
+                    {% endif %}
+                </div>
+
+                <!-- Upload Trigger Button -->
+                <button type="button" class="btn btn-outline-info w-100 mb-3" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="bi bi-cloud-upload me-1"></i>Upload Manual (PDF/DOCX/Image)
+                </button>
+
+                <!-- List of Uploaded Session Documents -->
+                <div class="text-uppercase text-muted fw-bold mb-2" style="font-size: 0.7rem;">Session Documents</div>
+                <div id="guestDocsList" class="overflow-y-auto mb-3" style="max-height: 220px;">
+                    {% for doc in documents %}
+                    <div class="p-2 mb-2 bg-dark bg-opacity-50 rounded border border-secondary text-light small">
+                        <div class="fw-medium text-truncate"><i class="bi bi-file-earmark-text text-info me-1"></i>{{ doc.title }}</div>
+                        <div class="text-muted d-flex justify-content-between mt-1" style="font-size: 0.7rem;">
+                            <span>{{ doc.file_type }} • {{ doc.readable_file_size }}</span>
+                            <span class="text-success"><i class="bi bi-check-circle me-1"></i>Indexed</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div id="noDocsMsg" class="text-muted small text-center py-3 bg-dark bg-opacity-25 rounded border border-dashed border-secondary">
+                        <i class="bi bi-file-earmark-plus d-block fs-4 mb-1"></i>
+                        No session files uploaded.<br>Chat is running in <strong>General Industrial Mode</strong>.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- End Session Button -->
+            <div class="pt-3 border-top border-secondary mt-auto">
+                <a href="{% url 'guest_end_session' %}" class="btn btn-outline-danger w-100 btn-sm" onclick="return confirm('End session? All temporary files and chat history will be permanently deleted.');">
+                    <i class="bi bi-trash3-fill me-1"></i>End Session & Purge Files
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Window: Chat Interface -->
+    <div class="col-md-8 col-lg-9">
+        <div class="card card-custom chat-container p-3">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center pb-3 mb-2 border-bottom border-secondary">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-info bg-gradient rounded-circle text-dark d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                        <i class="bi bi-robot fs-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-white mb-0 fw-bold">Quick AI Assistant</h5>
+                        <span class="text-muted small"><i class="bi bi-shield-check text-success me-1"></i>Session Isolated</span>
+                    </div>
+                </div>
+
+                <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-building me-1"></i>Register Company
+                </a>
+            </div>
+
+            <!-- Messages Box -->
+            <div class="chat-box mb-3" id="chatBox">
+                <div class="message-bubble message-ai">
+                    <strong class="d-block mb-1 text-info"><i class="bi bi-cpu-fill me-1"></i>FactoryMind Guest AI</strong>
+                    Welcome to FactoryMind Quick AI Assistant!
+                    <br><br>
+                    • **Option 1**: Upload a machine manual or SOP PDF using the panel on the left for instant OCR & specific RAG Q&A.
+                    <br>
+                    • **Option 2**: Ask general industrial questions directly (e.g. bearings, electric motors, centrifugal pumps, hydraulics, pneumatics, safety).
+                </div>
+
+                {% for msg in chat_messages %}
+                <div class="message-bubble {% if msg.sender == 'USER' %}message-user{% else %}message-ai{% endif %}">
+                    <strong class="d-block mb-1 {% if msg.sender == 'USER' %}text-light{% else %}text-info{% endif %}">
+                        {% if msg.sender == 'USER' %}<i class="bi bi-person-fill me-1"></i>You{% else %}<i class="bi bi-cpu-fill me-1"></i>FactoryMind AI{% endif %}
+                    </strong>
+                    <div style="white-space: pre-wrap;">{{ msg.content }}</div>
+
+                    {% if msg.citations_json %}
+                    <div class="mt-2 pt-2 border-top border-secondary">
+                        <span class="text-muted small fw-bold"><i class="bi bi-journal-bookmark me-1"></i>Cited Uploaded Sources:</span>
+                        {% for c in msg.citations_json %}
+                        <div class="citation-card">
+                            <span class="text-info fw-bold">{{ c.doc_title }}</span> (Page {{ c.page_number }})
+                            <div class="text-light small mt-1 italic">"{{ c.snippet }}"</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <span class="text-muted small d-block text-end mt-1" style="font-size: 0.7rem;">{{ msg.timestamp|date:"H:i" }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Input Bar -->
+            <form id="chatForm" class="d-flex gap-2">
+                {% csrf_token %}
+                <input type="text" id="chatInput" class="form-control form-control-lg bg-dark text-light border-secondary" placeholder="Ask a technical question (e.g., 'How to prevent pump cavitation?' or 'Motor bearing grease interval')..." required>
+                <button type="submit" class="btn btn-info text-dark fw-bold px-4" id="sendBtn">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-white"><i class="bi bi-cloud-upload text-info me-2"></i>Upload Session Document</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="guestUploadForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-light">Document Title *</label>
+                        <input type="text" name="title" class="form-control bg-dark text-light border-secondary" placeholder="e.g., Hydraulic Pump Manual" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light">File (PDF, DOCX, PNG, JPG, TXT) *</label>
+                        <input type="file" name="file" class="form-control bg-dark text-light border-secondary" accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.txt" required>
+                    </div>
+                    <div id="uploadProgress" class="alert alert-info py-2 small d-none">
+                        <i class="bi bi-hourglass-split me-1"></i>Processing OCR & indexing vector embeddings...
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info text-dark fw-bold" id="uploadBtn">Upload & Process</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatBox = document.getElementById('chatBox');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const guestUploadForm = document.getElementById('guestUploadForm');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const uploadModalEl = document.getElementById('uploadModal');
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Chat Message Submission
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        appendMessage('USER', text);
+        chatInput.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        const typingId = appendTypingIndicator();
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        fetch("{% url 'guest_send_message_api' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ message: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+            removeElement(typingId);
+            if (data.status === 'success') {
+                appendMessage('AI', data.message.content, data.message.citations, data.message.timestamp);
+            } else {
+                appendMessage('AI', 'Error: ' + (data.error || 'Unable to process query.'));
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        .catch(err => {
+            removeElement(typingId);
+            appendMessage('AI', 'Server error: ' + err);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    });
+
+    // File Upload API
+    guestUploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(guestUploadForm);
+        uploadProgress.classList.remove('d-none');
+
+        fetch("{% url 'guest_upload_api' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            uploadProgress.classList.add('d-none');
+            if (data.status === 'success') {
+                const modal = bootstrap.Modal.getInstance(uploadModalEl);
+                if (modal) modal.hide();
+                window.location.reload();
+            } else {
+                alert("Upload error: " + (data.error || 'Failed to upload document.'));
+            }
+        })
+        .catch(err => {
+            uploadProgress.classList.add('d-none');
+            alert("Server error: " + err);
+        });
+    });
+
+    function appendMessage(sender, content, citations = null, timestamp = '') {
+        const div = document.createElement('div');
+        div.className = `message-bubble ${sender === 'USER' ? 'message-user' : 'message-ai'}`;
+
+        let citationsHTML = '';
+        if (citations && citations.length > 0) {
+            citationsHTML += '<div class="mt-2 pt-2 border-top border-secondary"><span class="text-muted small fw-bold"><i class="bi bi-journal-bookmark me-1"></i>Cited Uploaded Sources:</span>';
+            citations.forEach(c => {
+                citationsHTML += `
+                    <div class="citation-card">
+                        <span class="text-info fw-bold">${c.doc_title}</span> (Page ${c.page_number})
+                        <div class="text-light small mt-1 italic">"${c.snippet}"</div>
+                    </div>
+                `;
+            });
+            citationsHTML += '</div>';
+        }
+
+        const now = timestamp || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        div.innerHTML = `
+            <strong class="d-block mb-1 ${sender === 'USER' ? 'text-light' : 'text-info'}">
+                ${sender === 'USER' ? '<i class="bi bi-person-fill me-1"></i>You' : '<i class="bi bi-cpu-fill me-1"></i>FactoryMind AI'}
+            </strong>
+            <div style="white-space: pre-wrap;">${escapeHtml(content)}</div>
+            ${citationsHTML}
+            <span class="text-muted small d-block text-end mt-1" style="font-size: 0.7rem;">${now}</span>
+        `;
+        chatBox.appendChild(div);
+    }
+
+    function appendTypingIndicator() {
+        const id = 'typing_' + Date.now();
+        const div = document.createElement('div');
+        div.id = id;
+        div.className = 'message-bubble message-ai text-muted italic';
+        div.innerHTML = '<i class="bi bi-three-dots text-info me-2"></i>Analyzing query...';
+        chatBox.appendChild(div);
+        return id;
+    }
+
+    function removeElement(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Semantic Vector Search - FactoryMind AI{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h3 class="fw-bold text-white mb-1"><i class="bi bi-cpu text-info me-2"></i>Semantic Vector Search Engine</h3>
+    <p class="text-muted small">Powered by Sentence Transformers & FAISS Vector Indexing</p>
+</div>
+
+<!-- Main Search Form -->
+<div class="card card-custom p-4 mb-4">
+    <form method="GET" action="{% url 'semantic_search' %}">
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-dark border-secondary text-info"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control bg-dark text-light border-secondary" placeholder="Enter technical query or error code (e.g. 'high motor vibration troubleshooting')" value="{{ query }}">
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <select name="category" class="form-select form-select-lg bg-dark text-light border-secondary">
+                    <option value="">All Knowledge Domains</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.name }}" {% if selected_category == cat.name %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <button type="submit" class="btn btn-primary-custom btn-lg w-100"><i class="bi bi-lightning-charge me-1"></i>Search</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Results Section -->
+{% if query %}
+    <h5 class="text-white mb-3">Found {{ results|length }} Semantic Matches for "<span class="text-info">{{ query }}</span>"</h5>
+    
+    <div class="row g-3">
+        {% for item in results %}
+        <div class="col-12">
+            <div class="card card-custom p-3 border-start border-4 border-info">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <a href="{% url 'document_detail' item.doc_id %}" class="text-white fw-bold text-decoration-none fs-5 hover-blue me-2">{{ item.doc_title }}</a>
+                        <span class="badge bg-dark text-info border border-secondary">Page {{ item.page_number }}</span>
+                        <span class="badge bg-secondary bg-opacity-25 text-muted ms-1">{{ item.category }}</span>
+                    </div>
+                    <span class="badge bg-info bg-opacity-25 text-info border border-info">
+                        Similarity: {{ item.score|floatformat:3 }}
+                    </span>
+                </div>
+                <p class="text-light mb-2 font-monospace bg-dark p-3 rounded border border-secondary small">
+                    {{ item.content }}
+                </p>
+                <div class="d-flex justify-content-between align-items-center text-muted small">
+                    <span><i class="bi bi-shield-check text-success me-1"></i>Vector Context Verified</span>
+                    <a href="{% url 'chat' %}?q={{ query|urlencode }}" class="text-info text-decoration-none"><i class="bi bi-robot me-1"></i>Ask AI Chatbot about this passage</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center p-5 card card-custom">
+            <i class="bi bi-search text-muted display-4 mb-3"></i>
+            <h5 class="text-white">No Vector Matches Found</h5>
+            <p class="text-muted small">Try rephrasing your search query or uploading relevant document manuals.</p>
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

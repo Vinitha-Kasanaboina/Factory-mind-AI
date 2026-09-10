@@ -1,0 +1,9 @@
+Django>=5.0,<6.0
+sentence-transformers>=2.2.2
+faiss-cpu>=1.7.4
+PyMuPDF>=1.23.0
+python-docx>=1.1.0
+pytesseract>=0.3.10
+Pillow>=10.0.0
+numpy>=1.24.0
+openai>=1.0.0

@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Knowledge Assistant - FactoryMind AI{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- Chat Sessions Sidebar -->
+    <div class="col-md-4 col-lg-3">
+        <div class="card card-custom p-3 h-100">
+            <a href="{% url 'new_chat_session' %}" class="btn btn-primary-custom w-100 mb-3">
+                <i class="bi bi-plus-lg me-1"></i>New Technical Query
+            </a>
+
+            <div class="text-uppercase text-muted fw-bold mb-2 small" style="font-size: 0.7rem;">Recent Sessions</div>
+            
+            <div class="nav flex-column gap-1 overflow-y-auto" style="max-height: calc(100vh - 280px);">
+                {% for s in sessions %}
+                <div class="d-flex align-items-center justify-content-between nav-link-custom p-2 rounded {% if current_session.id == s.id %}active{% endif %}">
+                    <a href="{% url 'chat_session' s.id %}" class="text-decoration-none text-light text-truncate me-2 flex-grow-1 small fw-medium">
+                        <i class="bi bi-chat-text me-1 text-info"></i>{{ s.title }}
+                    </a>
+                    <a href="{% url 'delete_chat_session' s.id %}" class="text-muted text-hover-danger p-1" onclick="return confirm('Delete this session?');">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
+                {% empty %}
+                <div class="text-muted small text-center py-3">No chat history</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chat Window -->
+    <div class="col-md-8 col-lg-9">
+        <div class="card card-custom chat-container p-3">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center pb-3 mb-2 border-bottom border-secondary">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                        <i class="bi bi-robot fs-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-white mb-0 fw-bold">{{ current_session.title }}</h5>
+                        <span class="text-muted small"><i class="bi bi-circle-fill text-success me-1" style="font-size: 0.5rem;"></i>FactoryMind RAG Engine Active</span>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <select id="categoryFilter" class="form-select form-select-sm bg-dark text-light border-secondary">
+                        <option value="">Search All Domains</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.name }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="chat-box mb-3" id="chatBox">
+                <div class="message-bubble message-ai">
+                    <strong class="d-block mb-1 text-info"><i class="bi bi-cpu-fill me-1"></i>FactoryMind AI</strong>
+                    Hello {{ user.first_name|default:user.username }}, I am your industrial knowledge assistant. Ask me anything about machine SOPs, maintenance procedures, or troubleshooting guides uploaded to the platform!
+                </div>
+
+                {% for msg in messages %}
+                <div class="message-bubble {% if msg.sender == 'USER' %}message-user{% else %}message-ai{% endif %}">
+                    <strong class="d-block mb-1 {% if msg.sender == 'USER' %}text-light{% else %}text-info{% endif %}">
+                        {% if msg.sender == 'USER' %}<i class="bi bi-person-fill me-1"></i>You{% else %}<i class="bi bi-cpu-fill me-1"></i>FactoryMind AI{% endif %}
+                    </strong>
+                    <div class="chat-content" style="white-space: pre-wrap;">{{ msg.content }}</div>
+
+                    {% if msg.citations_json %}
+                    <div class="mt-2 pt-2 border-top border-secondary">
+                        <span class="text-muted small fw-bold"><i class="bi bi-journal-bookmark me-1"></i>Cited Internal Sources:</span>
+                        {% for c in msg.citations_json %}
+                        <div class="citation-card">
+                            <span class="text-info fw-bold">{{ c.doc_title }}</span> (Page {{ c.page_number }}) - <span class="text-muted">Relevance {{ c.score }}</span>
+                            <div class="text-light small mt-1 italic">"{{ c.snippet }}"</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <span class="text-muted small d-block text-end mt-1" style="font-size: 0.7rem;">{{ msg.timestamp|date:"H:i" }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Chat Input Bar -->
+            <form id="chatForm" class="d-flex gap-2">
+                {% csrf_token %}
+                <input type="text" id="chatInput" class="form-control form-control-lg bg-dark text-light border-secondary" placeholder="Type your technical inquiry (e.g., 'How to replace oil seal on Motor #4?')..." required>
+                <button type="submit" class="btn btn-primary-custom px-4" id="sendBtn">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatBox = document.getElementById('chatBox');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const sessionId = "{{ current_session.id }}";
+
+    // Auto-scroll chat to bottom
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Check if query was passed in URL (from semantic search page)
+    const urlParams = new URLSearchParams(window.location.search);
+    const passedQuery = urlParams.get('q');
+    if (passedQuery) {
+        chatInput.value = passedQuery;
+    }
+
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        // Append User Message to UI
+        appendMessage('USER', text);
+        chatInput.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Show typing indicator
+        const typingId = appendTypingIndicator();
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Send AJAX request
+        fetch("{% url 'chat_api_send' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                message: text,
+                session_id: sessionId,
+                category_filter: categoryFilter.value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            removeElement(typingId);
+            if (data.status === 'success') {
+                appendMessage('AI', data.message.content, data.message.citations, data.message.timestamp);
+            } else {
+                appendMessage('AI', 'Error: ' + (data.error || 'Unable to process query.'));
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        .catch(err => {
+            removeElement(typingId);
+            appendMessage('AI', 'Server communication error: ' + err);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    });
+
+    function appendMessage(sender, content, citations = null, timestamp = '') {
+        const div = document.createElement('div');
+        div.className = `message-bubble ${sender === 'USER' ? 'message-user' : 'message-ai'}`;
+        
+        let citationsHTML = '';
+        if (citations && citations.length > 0) {
+            citationsHTML += '<div class="mt-2 pt-2 border-top border-secondary"><span class="text-muted small fw-bold"><i class="bi bi-journal-bookmark me-1"></i>Cited Internal Sources:</span>';
+            citations.forEach(c => {
+                citationsHTML += `
+                    <div class="citation-card">
+                        <span class="text-info fw-bold">${c.doc_title}</span> (Page ${c.page_number}) - <span class="text-muted">Relevance ${c.score}</span>
+                        <div class="text-light small mt-1 italic">"${c.snippet}"</div>
+                    </div>
+                `;
+            });
+            citationsHTML += '</div>';
+        }
+
+        const now = timestamp || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        div.innerHTML = `
+            <strong class="d-block mb-1 ${sender === 'USER' ? 'text-light' : 'text-info'}">
+                ${sender === 'USER' ? '<i class="bi bi-person-fill me-1"></i>You' : '<i class="bi bi-cpu-fill me-1"></i>FactoryMind AI'}
+            </strong>
+            <div style="white-space: pre-wrap;">${escapeHtml(content)}</div>
+            ${citationsHTML}
+            <span class="text-muted small d-block text-end mt-1" style="font-size: 0.7rem;">${now}</span>
+        `;
+        chatBox.appendChild(div);
+    }
+
+    function appendTypingIndicator() {
+        const id = 'typing_' + Date.now();
+        const div = document.createElement('div');
+        div.id = id;
+        div.className = 'message-bubble message-ai text-muted italic';
+        div.innerHTML = '<i class="bi bi-three-dots text-info me-2"></i>FactoryMind AI is analyzing vector index and generating answer...';
+        chatBox.appendChild(div);
+        return id;
+    }
+
+    function removeElement(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+});
+</script>
+{% endblock %}
